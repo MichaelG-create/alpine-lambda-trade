@@ -14,6 +14,7 @@ help:
 	@echo "  make test-producer  : Run the tests for the producer"
 	@echo "  make dbt-run        : Run dbt incremental models (Sprint 3)"
 	@echo "  make dbt-test       : Run dbt schema tests (Sprint 3)"
+	@echo "  make build-lambda   : Build python zip package for Lambda (Sprint 4)"
 
 init:
 	cd infra && \
@@ -23,16 +24,25 @@ init:
 plan:
 	cd infra && \
 	set -a && source ../.env && set +a && \
+	export TF_VAR_snowflake_account=$$SNOWFLAKE_ACCOUNT && \
+	export TF_VAR_snowflake_user=$$SNOWFLAKE_USER && \
+	export TF_VAR_snowflake_password=$$SNOWFLAKE_PASSWORD && \
 	terraform plan
 
-apply:
+apply: build-lambda
 	cd infra && \
 	set -a && source ../.env && set +a && \
+	export TF_VAR_snowflake_account=$$SNOWFLAKE_ACCOUNT && \
+	export TF_VAR_snowflake_user=$$SNOWFLAKE_USER && \
+	export TF_VAR_snowflake_password=$$SNOWFLAKE_PASSWORD && \
 	terraform apply
 
 destroy:
 	cd infra && \
 	set -a && source ../.env && set +a && \
+	export TF_VAR_snowflake_account=$$SNOWFLAKE_ACCOUNT && \
+	export TF_VAR_snowflake_user=$$SNOWFLAKE_USER && \
+	export TF_VAR_snowflake_password=$$SNOWFLAKE_PASSWORD && \
 	terraform destroy
 
 local-infra-up:
@@ -62,3 +72,9 @@ dbt-test:
 	cd src/batch_layer && \
 	export DBT_PROFILES_DIR=. && \
 	uv run dbt test --profiles-dir .
+
+build-lambda:
+	mkdir -p src/speed_layer/package
+	pip install -r src/speed_layer/requirements.txt -t src/speed_layer/package/
+	cd src/speed_layer/package && zip -r9 ../speed_layer.zip .
+	cd src/speed_layer && zip -g speed_layer.zip app.py
