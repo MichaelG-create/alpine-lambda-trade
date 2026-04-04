@@ -1,0 +1,62 @@
+resource "snowflake_database" "alt_db" {
+  name    = "ALT_DB"
+  comment = "Database for Alpine Lambda Trade (Batch and Speed Layers)"
+}
+
+resource "snowflake_schema" "alt_staging" {
+  database = snowflake_database.alt_db.name
+  name     = "STAGING"
+  comment  = "Schema for raw data ingestion (S3 / Real-time)"
+}
+
+resource "snowflake_schema" "alt_silver" {
+  database = snowflake_database.alt_db.name
+  name     = "SILVER"
+  comment  = "Cleansed and deduplicated data (dbt)"
+}
+
+resource "snowflake_schema" "alt_gold" {
+  database = snowflake_database.alt_db.name
+  name     = "GOLD"
+  comment  = "Business views and aggregations (dbt)"
+}
+
+resource "snowflake_warehouse" "alt_wh" {
+  name                = "ALT_WH"
+  warehouse_size      = "X-SMALL"
+  auto_suspend        = 60 # Règle métiers 6.C: Cost control
+  auto_resume         = true
+  initially_suspended = true
+}
+
+resource "snowflake_role" "alt_engineer" {
+  name    = "ALT_ENGINEER"
+  comment = "Data Engineer role for interacting with ALT DB"
+}
+
+# Storage Integration
+resource "snowflake_storage_integration" "alt_s3_integration" {
+  name    = "ALT_S3_INTEGRATION"
+  comment = "Integration with AWS S3 alt-raw-data bucket"
+  type    = "EXTERNAL_STAGE"
+
+  enabled = true
+
+  storage_provider         = "S3"
+  storage_aws_role_arn     = aws_iam_role.snowflake_s3_role.arn
+  storage_allowed_locations = ["s3://alt-raw-data/"]
+}
+
+# ==============================================================================
+# OUTPUTS (Pour l'étape 2 du setup : maj du Trust IAM Role sur AWS)
+# ==============================================================================
+
+output "snowflake_storage_aws_iam_user_arn" {
+  value       = snowflake_storage_integration.alt_s3_integration.storage_aws_iam_user_arn
+  description = "The Snowflake AWS IAM User ARN. À copier dans 'Principal' -> 'AWS' de la Trust Policy de alt-snowflake-s3-role."
+}
+
+output "snowflake_storage_aws_external_id" {
+  value       = snowflake_storage_integration.alt_s3_integration.storage_aws_external_id
+  description = "The Snowflake External ID. À copier dans sts:ExternalId de la Trust Policy de alt-snowflake-s3-role."
+}
