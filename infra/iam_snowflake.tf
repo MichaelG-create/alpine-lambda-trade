@@ -14,7 +14,12 @@ resource "aws_iam_role" "snowflake_s3_role" {
         Action = "sts:AssumeRole"
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+          AWS = "arn:aws:iam::473991839816:user/p1lh1000-s"
+        }
+        Condition = {
+          StringEquals = {
+            "sts:ExternalId" = "TQ80360_SFCRole=4_PfxHviHk0Q+01FKizgJXu7Aqg60="
+          }
         }
       }
     ]
