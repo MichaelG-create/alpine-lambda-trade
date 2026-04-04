@@ -5,3 +5,4 @@ sources:
     schema: STAGING
     tables:
       - name: RAW_TRADE
+      - name: STG_REALTIME

@@ -1,59 +1,75 @@
-# Alpine Lambda Trade (ALT)
+# Alpine Lambda Trade (ALT) 🏔️
 
-## Architecture
+**Senior Data Engineering project focused on building a true Lambda Architecture (Batch + Speed layers) targeting AWS and Snowflake.**
 
-This project implements a Lambda Architecture (Batch + Speed Layers) for a real-time Crypto analytics platform connecting AWS and Snowflake.
+ALT consumes high-frequency Crypto Exchange data via WebSockets (Binance), dynamically buffering them into data lake blobs (historical processing), while actively passing live subsets into millisecond AWS Kinesis triggers for split-second volatility analysis - unifying them securely inside Snowflake's ecosystem.
+
+## 🏗️ Architecture
 
 ```mermaid
 graph TD
-    WS((Crypto WebSocket))
+    classDef aws fill:#FF9900,stroke:#232F3E,stroke-width:2px;
+    classDef sf fill:#29B5E8,stroke:#1A6B8B,stroke-width:2px;
+    classDef python fill:#3776AB,stroke:#FFD43B,stroke-width:2px;
+
+    PROD[Multi-Path Producer<br>WebSockets]:::python
+
+    -- Speed Layer --> K[AWS Kinesis<br>Stream]:::aws
+    K --> L[AWS Lambda<br>EMA Logic]:::aws
     
-    subgraph "Producer Layer"
-        P[CCXT Python Producer]
-    end
+    -- Batch Layer --> S3[AWS S3<br>Raw Blob Parquet]:::aws
+    S3 -- SQS Event --> SP[Snowpipe<br>Auto-Ingest]:::sf
     
-    subgraph "Speed Layer (Real-time)"
-        Kinesis[AWS Kinesis Stream<br>alt-ticker-stream]
-        Lambda[AWS Lambda<br>EMA Calculation / Alerts]
-    end
+    SP --> SG_RAW[STAGING.RAW_TRADE]:::sf
+    SG_RAW -- dbt Incremental --> SL[SILVER.SLV_TRADES]:::sf
     
-    subgraph "Batch Layer (Historical)"
-        S3[AWS S3 Bucket<br>alt-raw-data]
-        Snowpipe[Snowpipe<br>Auto-ingest]
-        dbt[dbt<br>Silver/Gold Models]
-    end
+    L -- Real-Time Insert --> SG_RT[STAGING.STG_REALTIME]:::sf
     
-    subgraph "Serving Layer"
-        STG_REAL_TIME[(Snowflake<br>STG_REALTIME)]
-        BATCH_DB[(Snowflake<br>Historical Tables)]
-        View[VW_REALTIME_PORTFOLIO]
-    end
+    SL --> VW[VW_REALTIME_PORTFOLIO]:::sf
+    SG_RT --> VW
     
-    WS --> P
-    P -->|Stream trades| Kinesis
-    P -->|Batch Parquet (5m)| S3
-    
-    Kinesis --> Lambda
-    Lambda --> STG_REAL_TIME
-    
-    S3 --> Snowpipe
-    Snowpipe --> BATCH_DB
-    BATCH_DB --> dbt
-    
-    STG_REAL_TIME --> View
-    dbt --> View
+    VW -- Pandas & Altair --> SM[Streamlit<br>Dashboard]:::python
 ```
 
-## Business Problems & Solutions
+---
 
-### P1: Le Risque de "Slippage" (Volatilité)
-- **Problème :** Un décalage de prix de 2% en 60s peut ruiner une stratégie de trading. C'est inacceptable en Crypto.
-- **Solution ALT :** Speed Layer (Kinesis + Lambda) calculant une EMA en temps réel pour déclencher une alerte visuelle/système en < 1s.
+## 💡 Business Objectives
 
-### P2: L'Auditabilité et la Stratégie (Historique)
-- **Problème :** Impossible de backtester une stratégie ou de prouver la conformité sans une donnée "propre" et immuable.
-- **Solution ALT :** Batch Layer (S3 + dbt) garantissant une "Source of Truth" dédoublonnée, typée et archivée pour des analyses de corrélation sur 6 mois.
+The architecture directly aims at resolving key Data Engineering challenges in Finance:
 
-### P3: La Valorisation "Live" du Portefeuille (P&L)
-- **Problème :** Les gestionnaires voient souvent leur P&L avec 15min de retard. C'est inacceptable en Crypto.
-- **Solution ALT :** Serving Layer (Unified View) fusionnant les positions historiques et le dernier prix du marché pour un P&L "Up-to-the-millisecond".
+- **P1: Avoid Slippage (Volatility)**:
+   The AWS Kinesis and AWS Lambda pipeline process trades independently. Running stateless warm cache functions computes continuous Exponential Moving Averages (EMA) detecting spikes sub-second.
+   
+- **P2: Auditability and Immutability (Histories)**:
+   A robust, deduplicated dbt Pipeline leverages Incremental loads to cast and save historical records forever as an absolute source of truth.
+
+- **P3: The Live Portfolio Dilemma**:
+   Leveraging a `UNION ALL`, the `VW_REALTIME_PORTFOLIO` accurately masks dual histories, ignoring overlaps, to ensure you can see your active and past trades completely deduplicated in real-time.
+
+## 🚀 Getting Started
+
+### Pre-requisites
+- AWS Account securely synced (`aws configure`) or LocalStack.
+- Snowflake Trial or Account.
+- Python 3.10+ alongside `uv` installed.
+
+### Setup Process
+
+```bash
+# Set up environments
+cp .env.example .env
+# Fill it out!
+
+# 1. Spawn infrastructural pipelines natively
+make init
+make apply
+
+# 2. Run the Producers to feed Kinesis and S3
+make run-producer
+
+# 3. Create historical pipelines using DBT
+make dbt-run
+
+# 4. View the dashboard!
+make run-dashboard
+```

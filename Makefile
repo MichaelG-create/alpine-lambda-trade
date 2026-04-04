@@ -78,3 +78,8 @@ build-lambda:
 	pip install -r src/speed_layer/requirements.txt -t src/speed_layer/package/
 	cd src/speed_layer/package && zip -r9 ../speed_layer.zip .
 	cd src/speed_layer && zip -g speed_layer.zip app.py
+
+run-dashboard:
+	set -a && source .env && set +a && \
+	uv pip install -r src/serving_layer/requirements.txt && \
+	streamlit run src/serving_layer/dashboard.py
