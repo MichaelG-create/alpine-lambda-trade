@@ -12,6 +12,8 @@ help:
 	@echo "  make local-infra-down : Stop LocalStack"
 	@echo "  make run-producer   : Run the producer script (dev)"
 	@echo "  make test-producer  : Run the tests for the producer"
+	@echo "  make dbt-run        : Run dbt incremental models (Sprint 3)"
+	@echo "  make dbt-test       : Run dbt schema tests (Sprint 3)"
 
 init:
 	cd infra && \
@@ -48,3 +50,15 @@ test-producer:
 	set -a && source .env && set +a && \
 	export PYTHONPATH=. && \
 	uv run pytest tests/producer/ -v --cov=src/producer
+
+dbt-run:
+	set -a && source .env && set +a && \
+	cd src/batch_layer && \
+	export DBT_PROFILES_DIR=. && \
+	uv run dbt run --profiles-dir .
+
+dbt-test:
+	set -a && source .env && set +a && \
+	cd src/batch_layer && \
+	export DBT_PROFILES_DIR=. && \
+	uv run dbt test --profiles-dir .

@@ -1,0 +1,13 @@
+alpine_lambda_trade:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: "ALT_ENGINEER"
+      database: "ALT_DB"
+      warehouse: "ALT_WH"
+      schema: "STAGING"
+      threads: 4

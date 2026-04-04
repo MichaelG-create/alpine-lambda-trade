@@ -24,3 +24,14 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "raw_data_encrypti
     }
   }
 }
+
+resource "aws_s3_bucket_notification" "snowpipe_notification" {
+  bucket = aws_s3_bucket.raw_data.id
+
+  queue {
+    queue_arn     = snowflake_pipe.alt_snowpipe.notification_channel
+    events        = ["s3:ObjectCreated:*"]
+    filter_prefix = "ticker/"
+    filter_suffix = ".parquet"
+  }
+}
