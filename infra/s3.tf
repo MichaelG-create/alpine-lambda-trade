@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "raw_data" {
-  bucket = "alt-raw-data"
+  bucket = "alt-raw-data-${data.aws_caller_identity.current.account_id}"
 
   tags = {
     Project     = "Alpine-Lambda-Trade"

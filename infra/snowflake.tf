@@ -44,7 +44,7 @@ resource "snowflake_storage_integration" "alt_s3_integration" {
 
   storage_provider         = "S3"
   storage_aws_role_arn     = aws_iam_role.snowflake_s3_role.arn
-  storage_allowed_locations = ["s3://alt-raw-data/"]
+  storage_allowed_locations = ["s3://alt-raw-data-${data.aws_caller_identity.current.account_id}/"]
 }
 
 # ==============================================================================

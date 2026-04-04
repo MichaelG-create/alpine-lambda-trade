@@ -36,8 +36,8 @@ resource "aws_iam_policy" "snowflake_s3_policy" {
           "s3:ListBucket"
         ]
         Resource = [
-          "arn:aws:s3:::alt-raw-data",
-          "arn:aws:s3:::alt-raw-data/*"
+          "arn:aws:s3:::alt-raw-data-${data.aws_caller_identity.current.account_id}",
+          "arn:aws:s3:::alt-raw-data-${data.aws_caller_identity.current.account_id}/*"
         ]
       }
     ]
