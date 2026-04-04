@@ -34,6 +34,20 @@ resource "snowflake_role" "alt_engineer" {
   comment = "Data Engineer role for interacting with ALT DB"
 }
 
+resource "snowflake_grant_account_role" "engineer_grant" {
+  role_name = snowflake_role.alt_engineer.name
+  user_name = upper(var.snowflake_user)
+}
+
+resource "snowflake_grant_privileges_to_account_role" "db_grant" {
+  privileges        = ["USAGE", "CREATE SCHEMA", "MODIFY"]
+  account_role_name = snowflake_role.alt_engineer.name
+  on_account_object {
+    object_type = "DATABASE"
+    object_name = snowflake_database.alt_db.name
+  }
+}
+
 # Storage Integration
 resource "snowflake_storage_integration" "alt_s3_integration" {
   name    = "ALT_S3_INTEGRATION"

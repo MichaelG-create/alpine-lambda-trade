@@ -23,3 +23,6 @@ models:
     silver:
       +materialized: incremental
       +schema: SILVER
+    serving:
+      +materialized: view
+      +schema: SERVING
