@@ -82,24 +82,32 @@ st.divider()
 st.subheader("Price Movements & Volatility Anomalies")
 
 if not df.empty:
-    # Main line chart
-    chart = alt.Chart(df).mark_line().encode(
-        x=alt.X('TRADE_TIMESTAMP:T', title='Time'),
+    base = alt.Chart(df).encode(
+        x=alt.X('TRADE_TIMESTAMP:T', title='Time')
+    )
+
+    lines = base.mark_line().encode(
         y=alt.Y('PRICE:Q', scale=alt.Scale(zero=False), title='Market Price'),
-        color=alt.Color('SYMBOL:N', title='Ticker')
-    ).properties(height=400)
+        color=alt.Color('SYMBOL:N', title='Ticker', legend=None)
+    )
 
-    # Spike Markers overlay
-    spikes = df[df['SPIKE_DETECTED'] == True]
-    if not spikes.empty:
-        spike_chart = alt.Chart(spikes).mark_point(color='red', size=100, shape='square').encode(
-            x='TRADE_TIMESTAMP:T',
-            y='PRICE:Q',
-            tooltip=['SYMBOL', 'PRICE', 'EMA', 'SOURCE_LAYER']
-        )
-        chart = chart + spike_chart
+    spikes = base.transform_filter(
+        alt.datum.SPIKE_DETECTED == True
+    ).mark_point(color='red', size=150, shape='diamond').encode(
+        y='PRICE:Q',
+        tooltip=['SYMBOL', 'PRICE', 'EMA', 'SOURCE_LAYER']
+    )
 
-    st.altair_chart(chart, use_container_width=True)
+    combined = alt.layer(lines, spikes).properties(height=250)
+
+    faceted_chart = combined.facet(
+        row=alt.Row('SYMBOL:N', title=None),
+        spacing=20
+    ).resolve_scale(
+        y='independent'
+    )
+
+    st.altair_chart(faceted_chart, use_container_width=True)
 
 st.subheader("Last 50 Ledger Transactions")
 # Style dataframe to highlight the source
