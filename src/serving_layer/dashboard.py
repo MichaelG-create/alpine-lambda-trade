@@ -63,20 +63,23 @@ recent_spikes = kpis_df['RECENT_SPIKES'].iloc[0] if not kpis_df.empty else 0
 recent_spikes = int(recent_spikes) if pd.notna(recent_spikes) else 0
 
 if not df.empty:
-    latest = df.iloc[0]
-    current_price = latest['PRICE']
-    current_ema = latest['EMA'] if pd.notna(latest['EMA']) else 0
+    symbols = df['SYMBOL'].unique()
+    num_cols = 2 + len(symbols)
+    cols = st.columns(num_cols)
+    
+    cols[0].metric("📈 Total Trades", f"{total_trades:,}")
+    cols[1].metric("⚠️ Spikes (1H)", recent_spikes)
+    
+    for i, symbol in enumerate(symbols):
+        latest_sym = df[df['SYMBOL'] == symbol].iloc[0]
+        curr_price = latest_sym['PRICE']
+        curr_ema = latest_sym['EMA'] if pd.notna(latest_sym['EMA']) else curr_price
+        diff = curr_price - curr_ema
+        cols[2 + i].metric(f"🎯 {symbol} vs EMA", f"${curr_price:,.2f}", f"{diff:,.2f} Delta" if diff != 0 else "0.00")
 else:
-    current_price = 0
-    current_ema = 0
-
-diff = current_price - current_ema
-
-col1, col2, col3 = st.columns(3)
-col1.metric("📈 Total Trades Count (Historique + Live)", f"{total_trades:,}")
-col2.metric("🎯 Current Price vs EMA", f"${current_price:,.2f}", f"{diff:,.2f} Delta" if diff != 0 else "0.00")
-col3.metric("⚠️ Spike Alert Counter (Last 1H)", recent_spikes)
-
+    cols = st.columns(2)
+    cols[0].metric("📈 Total Trades", f"{total_trades:,}")
+    cols[1].metric("⚠️ Spikes (1H)", recent_spikes)
 st.divider()
 
 st.subheader("Price Movements & Volatility Anomalies")
@@ -86,9 +89,14 @@ if not df.empty:
         x=alt.X('TRADE_TIMESTAMP:T', title='Heure (Locale)', axis=alt.Axis(format='%H:%M:%S', labelAngle=-45))
     )
 
-    lines = base.mark_line().encode(
-        y=alt.Y('PRICE:Q', scale=alt.Scale(zero=False), title='Market Price'),
-        color=alt.Color('SYMBOL:N', title='Ticker', legend=None)
+    price_line = base.mark_line(opacity=0.8).encode(
+        y=alt.Y('PRICE:Q', scale=alt.Scale(zero=False), title='Value ($)'),
+        color=alt.datum('Prix Actuel')
+    )
+    
+    ema_line = base.mark_line(opacity=0.8, strokeDash=[5, 5]).encode(
+        y=alt.Y('EMA:Q'),
+        color=alt.datum('EMA Temps Réel')
     )
 
     spikes = base.transform_filter(
@@ -98,8 +106,7 @@ if not df.empty:
         tooltip=['SYMBOL', 'PRICE', 'EMA', 'SOURCE_LAYER']
     )
 
-    combined = alt.layer(lines, spikes).properties(height=250)
-
+    combined = alt.layer(price_line, ema_line, spikes).properties(height=250)
     faceted_chart = combined.facet(
         row=alt.Row('SYMBOL:N', title=None),
         spacing=20
