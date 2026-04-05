@@ -33,7 +33,7 @@ def lambda_handler(event, context):
     records_to_insert = []
     
     for record in event['Records']:
-        payload = base64.b64decode(record['kinesis']['data']).decode('utf-8')
+        payload = record['body']
         try:
             trade = json.loads(payload)
         except Exception as e:

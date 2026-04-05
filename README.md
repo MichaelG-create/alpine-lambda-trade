@@ -14,8 +14,8 @@ graph TD
 
     PROD[Multi-Path Producer<br>WebSockets]:::python
 
-    -- Speed Layer --> K[AWS Kinesis<br>Stream]:::aws
-    K --> L[AWS Lambda<br>EMA Logic]:::aws
+    -- Speed Layer --> SQS[AWS SQS<br>Queue]:::aws
+    SQS --> L[AWS Lambda<br>EMA Logic]:::aws
     
     -- Batch Layer --> S3[AWS S3<br>Raw Blob Parquet]:::aws
     S3 -- SQS Event --> SP[Snowpipe<br>Auto-Ingest]:::sf
@@ -38,7 +38,8 @@ graph TD
 The architecture directly aims at resolving key Data Engineering challenges in Finance:
 
 - **P1: Avoid Slippage (Volatility)**:
-   The AWS Kinesis and AWS Lambda pipeline process trades independently. Running stateless warm cache functions computes continuous Exponential Moving Averages (EMA) detecting spikes sub-second.
+   The AWS SQS and AWS Lambda pipeline process trades independently. Running stateless warm cache functions computes continuous Exponential Moving Averages (EMA) detecting spikes sub-second.
+   *(Note: The initial architecture leveraged Amazon Kinesis for high-throughput streaming. To remain strictly within the AWS Free Tier, the Speed Layer has been migrated to Amazon SQS. This demonstrates the system's flexibility and proficiency in utilizing both high-performance continuous streaming (Kinesis) and decoupled message queuing (SQS) solutions).*
    
 - **P2: Auditability and Immutability (Histories)**:
    A robust, deduplicated dbt Pipeline leverages Incremental loads to cast and save historical records forever as an absolute source of truth.

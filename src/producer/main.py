@@ -4,7 +4,7 @@ import signal
 import sys
 from src.producer.config import settings
 from src.producer.s3_buffer import S3Buffer
-from src.producer.kinesis_client import KinesisClient
+from src.producer.sqs_client import SQSClient
 from src.producer.exchange_stream import ExchangeStream
 
 logging.basicConfig(level=logging.INFO)
@@ -13,11 +13,22 @@ logger = logging.getLogger(__name__)
 async def main():
     logger.info("Initializing Producer services...")
     s3_buffer = S3Buffer()
-    kinesis_client = KinesisClient()
+    sqs_client = SQSClient()
+    
+    sqs_trade_buffer = []
     
     async def handle_trade(trade: dict):
         await s3_buffer.add_trade(trade)
-        await kinesis_client.push_trades([trade])
+        
+        # Buffer for SQS batching (up to 10 max per batch)
+        sqs_trade_buffer.append(trade)
+        if len(sqs_trade_buffer) >= 10:
+            batch_to_send = sqs_trade_buffer.copy()
+            sqs_trade_buffer.clear()
+            try:
+                await sqs_client.push_trades(batch_to_send)
+            except Exception as e:
+                logger.error(f"Failed to push trades to SQS")
 
     exchange_stream = ExchangeStream(callbacks=[handle_trade])
     
@@ -35,6 +46,14 @@ async def main():
     finally:
         logger.info("Flushing remaining buffer to S3...")
         await s3_buffer.flush()
+        
+        if len(sqs_trade_buffer) > 0:
+            logger.info(f"Flushing remaining {len(sqs_trade_buffer)} trades to SQS...")
+            try:
+                await sqs_client.push_trades(sqs_trade_buffer)
+            except Exception as e:
+                pass
+
         logger.info("Shutdown complete.")
 
 if __name__ == "__main__":

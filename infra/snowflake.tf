@@ -163,6 +163,6 @@ resource "snowflake_table" "stg_realtime" {
 
   column {
     name = "TRADE_TIMESTAMP"
-    type = "TIMESTAMP_NTZ"
+    type = "TIMESTAMP_NTZ(9)"
   }
 }

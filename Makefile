@@ -82,4 +82,4 @@ build-lambda:
 run-dashboard:
 	set -a && source .env && set +a && \
 	uv pip install -r src/serving_layer/requirements.txt && \
-	streamlit run src/serving_layer/dashboard.py
+	uv run streamlit run src/serving_layer/dashboard.py

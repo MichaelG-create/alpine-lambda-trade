@@ -31,9 +31,9 @@ resource "aws_iam_role" "lambda_exec_role" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "lambda_kinesis_policy" {
+resource "aws_iam_role_policy_attachment" "lambda_sqs_policy" {
   role       = aws_iam_role.lambda_exec_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaKinesisExecutionRole"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole"
 }
 
 resource "aws_lambda_function" "speed_layer" {
@@ -57,10 +57,9 @@ resource "aws_lambda_function" "speed_layer" {
   }
 }
 
-resource "aws_lambda_event_source_mapping" "kinesis_trigger" {
-  event_source_arn                   = aws_kinesis_stream.ticker_stream.arn
+resource "aws_lambda_event_source_mapping" "sqs_trigger" {
+  event_source_arn                   = aws_sqs_queue.ticker_queue.arn
   function_name                      = aws_lambda_function.speed_layer.arn
-  starting_position                  = "LATEST"
   batch_size                         = 10
   maximum_batching_window_in_seconds = 5
 }
