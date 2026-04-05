@@ -83,7 +83,7 @@ st.subheader("Price Movements & Volatility Anomalies")
 
 if not df.empty:
     base = alt.Chart(df).encode(
-        x=alt.X('TRADE_TIMESTAMP:T', title='Time')
+        x=alt.X('TRADE_TIMESTAMP:T', title='Heure (Locale)', axis=alt.Axis(format='%H:%M:%S', labelAngle=-45))
     )
 
     lines = base.mark_line().encode(
@@ -113,3 +113,8 @@ st.subheader("Last 50 Ledger Transactions")
 # Style dataframe to highlight the source
 if not df.empty:
     st.dataframe(df.head(50), use_container_width=True)
+
+# Auto-refresh du dashboard toutes les 5 secondes
+import time
+time.sleep(5)
+st.rerun()
