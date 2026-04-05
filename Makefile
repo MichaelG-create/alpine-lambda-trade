@@ -76,11 +76,13 @@ dbt-test:
 
 build-lambda:
 	mkdir -p src/speed_layer/package
-	pip install --platform manylinux2014_x86_64 --target=src/speed_layer/package --implementation cp --python-version 3.12 --only-binary=:all: --upgrade -r src/speed_layer/requirements.txt
+	uv export --only-group speed --no-hashes > src/speed_layer/requirements_lambda.txt
+	uv pip install --platform manylinux2014_x86_64 --target=src/speed_layer/package --implementation cp --python-version 3.12 --only-binary=:all: --upgrade -r src/speed_layer/requirements_lambda.txt
 	cd src/speed_layer/package && zip -r9 ../speed_layer.zip .
 	cd src/speed_layer && zip -g speed_layer.zip app.py
+	rm src/speed_layer/requirements_lambda.txt
 
 run-dashboard:
 	set -a && source .env && set +a && \
-	uv pip install -r src/serving_layer/requirements.txt && \
+	uv sync --extra serving && \
 	uv run streamlit run src/serving_layer/dashboard.py
