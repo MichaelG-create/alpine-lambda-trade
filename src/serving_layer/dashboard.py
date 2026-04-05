@@ -35,13 +35,11 @@ def get_historical_data():
     ORDER BY TRADE_TIMESTAMP DESC
     LIMIT 2000
     """)
-    df = cursor.fetch_pandas_all()
+    # Fetch using fetchall() to avoid PyArrow LargeUtf8 typing issues in Streamlit
+    results = cursor.fetchall()
+    columns = [col[0] for col in cursor.description]
+    df = pd.DataFrame(results, columns=columns)
     
-    # Fix for Streamlit LargeUtf8 Arrow serialization error
-    if not df.empty:
-        df['SYMBOL'] = df['SYMBOL'].astype(str)
-        df['SOURCE_LAYER'] = df['SOURCE_LAYER'].astype(str)
-        
     return df
 @st.cache_data(ttl=5)
 def get_kpis():
