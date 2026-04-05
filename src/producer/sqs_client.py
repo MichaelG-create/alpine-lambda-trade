@@ -4,11 +4,22 @@ import uuid
 import logging
 from typing import List
 
+from src.producer.config import settings
+
 logger = logging.getLogger(__name__)
 
 class SQSClient:
     def __init__(self):
-        self.sqs = boto3.client('sqs')
+        client_kwargs = {
+            "region_name": settings.aws_region
+        }
+        if settings.aws_endpoint_url:
+            client_kwargs["endpoint_url"] = settings.aws_endpoint_url
+        if settings.aws_access_key_id:
+            client_kwargs["aws_access_key_id"] = settings.aws_access_key_id
+            client_kwargs["aws_secret_access_key"] = settings.aws_secret_access_key
+            
+        self.sqs = boto3.client('sqs', **client_kwargs)
         try:
             # We fetch the QueueUrl dynamically from its name
             response = self.sqs.get_queue_url(QueueName='alt-ticker-queue')

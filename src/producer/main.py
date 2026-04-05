@@ -27,8 +27,9 @@ async def main():
             sqs_trade_buffer.clear()
             try:
                 await sqs_client.push_trades(batch_to_send)
+                logger.info(f"Pushed batch of {len(batch_to_send)} trades to SQS.")
             except Exception as e:
-                logger.error(f"Failed to push trades to SQS")
+                logger.error(f"Failed to push trades to SQS: {e}")
 
     exchange_stream = ExchangeStream(callbacks=[handle_trade])
     

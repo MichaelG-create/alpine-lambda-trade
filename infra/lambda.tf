@@ -40,7 +40,7 @@ resource "aws_lambda_function" "speed_layer" {
   function_name    = "alt-speed-ema-processor"
   role             = aws_iam_role.lambda_exec_role.arn
   handler          = "app.lambda_handler"
-  runtime          = "python3.10"
+  runtime          = "python3.12"
   timeout          = 15
   memory_size      = 256
   

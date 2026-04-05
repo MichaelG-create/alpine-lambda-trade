@@ -35,8 +35,14 @@ def get_historical_data():
     ORDER BY TRADE_TIMESTAMP DESC
     LIMIT 2000
     """)
-    return cursor.fetch_pandas_all()
-
+    df = cursor.fetch_pandas_all()
+    
+    # Fix for Streamlit LargeUtf8 Arrow serialization error
+    if not df.empty:
+        df['SYMBOL'] = df['SYMBOL'].astype(str)
+        df['SOURCE_LAYER'] = df['SOURCE_LAYER'].astype(str)
+        
+    return df
 @st.cache_data(ttl=5)
 def get_kpis():
     cursor = sf.cursor()

@@ -15,6 +15,7 @@ help:
 	@echo "  make dbt-run        : Run dbt incremental models (Sprint 3)"
 	@echo "  make dbt-test       : Run dbt schema tests (Sprint 3)"
 	@echo "  make build-lambda   : Build python zip package for Lambda (Sprint 4)"
+	@echo "  make run-dashboard  : Run Streamlit dashboard (Sprint 5)"
 
 init:
 	cd infra && \
@@ -75,7 +76,7 @@ dbt-test:
 
 build-lambda:
 	mkdir -p src/speed_layer/package
-	pip install -r src/speed_layer/requirements.txt -t src/speed_layer/package/
+	pip install --platform manylinux2014_x86_64 --target=src/speed_layer/package --implementation cp --python-version 3.12 --only-binary=:all: --upgrade -r src/speed_layer/requirements.txt
 	cd src/speed_layer/package && zip -r9 ../speed_layer.zip .
 	cd src/speed_layer && zip -g speed_layer.zip app.py
 

@@ -28,8 +28,8 @@ def s3_client():
         yield client
 
 @pytest.fixture(scope="function")
-def kinesis_client():
+def sqs_client():
     with mock_aws():
-        client = boto3.client("kinesis", region_name="eu-north-1")
-        client.create_stream(StreamName="alt-ticker-stream", ShardCount=1)
+        client = boto3.client("sqs", region_name="eu-north-1")
+        client.create_queue(QueueName="alt-ticker-queue")
         yield client

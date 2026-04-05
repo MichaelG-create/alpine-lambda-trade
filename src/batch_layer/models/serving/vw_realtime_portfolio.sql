@@ -24,7 +24,7 @@ real_time AS (
         CAST(ema AS FLOAT) as ema
     FROM {{ source('alpine_lambda_trade_source', 'STG_REALTIME') }}
     -- Filter out overlaps seamlessly
-    WHERE trade_timestamp > (SELECT MAX(trade_timestamp) FROM historical)
+    WHERE trade_timestamp > COALESCE((SELECT MAX(trade_timestamp) FROM historical), '1970-01-01'::TIMESTAMP)
 )
 
 SELECT * FROM historical
